@@ -6,7 +6,8 @@ from utility import *
 pathImage=r"E:\X\SID\sudoku_17.png"
 from tensorflow.keras.models import load_model
 
-
+# loading model
+model=initializePredictionModel()
 
 
 # PREPARING THE IMAGE
@@ -56,6 +57,12 @@ if biggest.size != 0:
     except:
         pass
     print_sudoku(board)  
+    flatlist=[]
+    for sublist in board:
+        for item in sublist:
+            flatlist.append(item)
+    solvedNumbers=flatlist*posArray
+    imgSolvedNumbers=displayNumbers(imgSolvedDigits,solvedNumbers)
 
     
 
