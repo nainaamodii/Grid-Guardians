@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from sudokualgo import *
 
 from utility import *
 pathImage=r"E:\X\SID\sudoku_17.png"
@@ -44,13 +45,16 @@ if biggest.size != 0:
 
 ## FINDING SOLUTION ON BOARD(TO BE DONE BY AADYA)
 
-    # board=np.array_split(numbers, 9)
-    # print(board)
-    # try:
-        # SudokuSolver.Solve(board)
-    # except:
-        # pass
-    # print(board)
+    board=np.array_split(numbers, 9)
+    print(board)
+    try:
+        solve_sudoku(board)
+    except:
+        pass
+    print_sudoku(board)  
+
+    
+
 
 ##overlay Solution
     import cv2
