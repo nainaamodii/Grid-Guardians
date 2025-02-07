@@ -86,4 +86,6 @@ def splitBoxes(img):
     boxes=[]
     for r in rows:
         cols=np.hsplit(r,9)
-        for boxes
+        for box in cols:
+            boxes.append(box)
+    return boxes
