@@ -4,6 +4,7 @@ from sudokualgo import *
 
 from utility import *
 pathImage=r"E:\X\SID\sudoku_17.png"
+from tensorflow.keras.models import load_model
 
 # loading model
 model=initializePredictionModel()
