@@ -5,6 +5,9 @@ from sudokualgo import *
 from utility import *
 pathImage=r"E:\X\SID\sudoku_17.png"
 
+
+
+
 # PREPARING THE IMAGE
 widthImg=450
 heightImg=450
@@ -88,5 +91,3 @@ if biggest.size != 0:
     ''' read ur problem solution again and decorate ur project with problem statement deco'''
 
     # overlay solution part for extra points
-
-

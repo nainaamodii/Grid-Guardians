@@ -1,6 +1,7 @@
 ## FUNCTION FOR MAKING GRIDS ON INTERMEDIATE IMG
 import cv2
 import numpy as np
+from tensorflow.keras.models import load_model
 
 
 def drawGrid(img):
@@ -14,6 +15,12 @@ def drawGrid(img):
         cv2.line(img, pt1, pt2, (255,255,0),2)
         cv2.line(img, pt3,pt4,(255, 255,0),2)
     return img
+
+# loading the model 
+def initializePredictionModel():
+    model = load_model('digit_recognition.keras')
+    return model
+
 
 #1.processing image
 def preProcess(img):
@@ -50,6 +57,33 @@ def biggestContour(contours):
                 biggest=approx
                 max_area=area
     return biggest,max_area
+
+#4. get predictions on all images
+# get predictions on all images 
+def getPrediction(boxes, model):
+    result = []
+    for image in boxes:
+        # prepare image
+        img = np.asarray(image)
+        img = img[4:img.shape[0] - 4, 4:img.shape[1] - 4]
+        img = cv2.resize(img, (28, 28))
+        img = img / 255
+        img = img.reshape(1, 28, 28, 1)
+        
+        # get prediction
+        predictions = model.predict(img)
+        # classIndex = model.predict_classes(img)
+        classIndex = np.argmax(predictions, axis=-1)
+        probabilityValue = np.amax(predictions)
+        print(classIndex, probabilityValue)
+
+        # save to result
+        if probabilityValue > 0.8:
+            result.append(classIndex[0])
+        else:
+            result.append(0)
+    return result
+
 
 #6. stack all images in one window
 def stackImages(imgArray,scale):
