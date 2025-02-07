@@ -132,3 +132,6 @@ def splitBoxes(img):
         for box in cols:
             boxes.append(box)
     return boxes
+
+# DISPLAY NUMBERS ON IMAGE
+
