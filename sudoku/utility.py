@@ -19,13 +19,16 @@ def drawGrid(img):
 def preProcess(img):
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     imgBlur = cv2.GaussianBlur(imgGray,(5,5),1)
-    imgThreshold = cv2.adaptive(imgBlur,255,1,1,11,2)
-    return imgThreshold
+    # imgThreshold = cv2.adaptive(imgBlur,255,1,1,11,2)
+    # Apply global thresholding
+    # imgThreshold = cv2.threshold(imgBlur, 127, 255, cv2.THRESH_BINARY)
+    # return imgThreshold
+    return imgBlur
 
 #reorder points for warp perspective
 def reorder(myPoints):
     myPoints=myPoints.reshape((4,2))
-    myPointsNew=np.zeroes((4,1,2),dtype=np.int32)
+    myPointsNew=np.zeros((4,1,2),dtype=np.int32)
     add=myPoints.sum(1)
     myPointsNew[0]=myPoints[np.argmin(add)]
     myPointsNew[3]=myPoints[np.argmax(add)]
@@ -76,3 +79,11 @@ def stackImages(imgArray,scale):
         hor_con=np.concatenate(imgArray)
         ver=hor
     return ver
+
+# to split the images into 81 different boxes
+def splitBoxes(img):
+    rows= np.vsplit(img,9)
+    boxes=[]
+    for r in rows:
+        cols=np.hsplit(r,9)
+        for boxes
