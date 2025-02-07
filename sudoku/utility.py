@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
 
-
 def drawGrid(img):
     secW= int(img.shape[1]/9)
     secH=int(img.shape[0]/9)
@@ -84,7 +83,17 @@ def getPrediction(boxes, model):
             result.append(0)
     return result
 
-
+# to display the solution on the image 
+def displayNumbers(img, numbers, color = (0, 255, 0)):
+    secW = int(img.shape[1]/9)
+    secH = int(img.shape[0]/9)
+    for x in range(9):
+        for y in range(9):
+            if numbers[(y*9)+x] != 0:
+                cv2.putTest(img, str(numbers[(y*9)+x]),
+                (x*secW+int(secW/2)-10, int((y+0.8)*secH)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, color , 2, cv2.LINE_AA)
+    return img
+    
 #6. stack all images in one window
 def stackImages(imgArray,scale):
     rows= len(imgArray)
