@@ -124,5 +124,5 @@ def splitBoxes(img):
             boxes.append(box)
     return boxes
 
-# DISPLAY NUMBERS ON IMAGE
+
 

@@ -5,7 +5,8 @@ from sudokualgo import *
 from utility import *
 pathImage=r"E:\X\SID\sudoku_17.png"
 
-
+# loading model
+model=initializePredictionModel()
 
 
 # PREPARING THE IMAGE
