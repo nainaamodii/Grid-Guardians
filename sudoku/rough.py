@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 from utility import *
-pathImage=r"E:\X\SID\sudoku_17.png"
+# pathImage=r"E:\X\SID\sudoku_17.png"
 
 # PREPARING THE IMAGE
 widthImg=450

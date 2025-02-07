@@ -90,10 +90,10 @@ def displayNumbers(img, numbers, color = (0, 255, 0)):
     for x in range(9):
         for y in range(9):
             if numbers[(y*9)+x] != 0:
-                cv2.putTest(img, str(numbers[(y*9)+x]),
+                cv2.putText(img, str(numbers[(y*9)+x]),
                 (x*secW+int(secW/2)-10, int((y+0.8)*secH)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, color , 2, cv2.LINE_AA)
     return img
-    
+
 #6. stack all images in one window
 def stackImages(imgArray,scale):
     rows= len(imgArray)
