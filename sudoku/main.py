@@ -3,7 +3,7 @@ import cv2
 from sudokualgo import *
 
 from utility import *
-pathImage=r"Readme\sudoku_2.png"
+pathImage=r"resources\sudoku_2.png"
 from tensorflow.keras.models import load_model
 
 # loading model
