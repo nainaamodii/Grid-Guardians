@@ -3,7 +3,7 @@ import cv2
 from sudokualgo import *
 
 from utility import *
-pathImage=r"E:\X\SID\sudoku_1.png"
+pathImage=r"Readme\sudoku_2.png"
 from tensorflow.keras.models import load_model
 
 # loading model
@@ -43,6 +43,15 @@ if biggest.size != 0:
     boxes= splitBoxes(imgWrapColoured)
     
     numbers=getPrediction(boxes,model)
+    # numbers=[3,0,1,0,8,6,5,0,4,
+    #      0,4,6,5,2,1,0,7,0,
+    #      5,0,0,0,0,0,0,0,1,
+    #      4,0,0,8,0,0,0,0,2,
+    #      0,8,0,3,4,7,9,0,0,
+    #      0,0,9,0,5,0,0,3,8,
+    #      0,0,4,0,9,0,2,0,0,
+    #      0,0,8,7,3,4,0,9,0,
+    #      0,0,7,2,0,8,1,0,3]
     # numbers= [7,8,0,4,0,0,1,2,0,6,0,0,0,7,5,0,0,9,0,0,0,6,0,1,0,7,8,0,0,7,0,4,0,2,6,0,0,0,1,0,5,0,9,3,0,9,0,4,0,6,0,0,0,5,0,7,0,3,0,0,0,1,2,1,2,0,0,0,7,4,0,0,0,4,9,2,0,6,0,0,7]
     
     imgDetectedDigits=displayNumbers(imgDetectedDigits, numbers, color=(52,132,197))
@@ -102,6 +111,15 @@ if biggest.size != 0:
 
 # numbers= [7,8,0,4,0,0,1,2,0,6,0,0,0,7,5,0,0,9,0,0,0,6,0,1,0,7,8,0,0,7,0,4,0,2,6,0,0,0,1,0,5,0,9,3,0,9,0,4,0,6,0,0,0,5,0,7,0,3,0,0,0,1,2,1,2,0,0,0,7,4,0,0,0,4,9,2,0,6,0,0,7]
 
+# numbers=[3,0,1,0,8,6,5,0,4,
+#          0,4,6,5,2,1,0,7,0,
+#          5,0,0,0,0,0,0,0,1,
+#          4,0,0,8,0,0,0,0,2,
+#          0,8,0,3,4,7,9,0,0,
+#          0,0,9,0,5,0,0,3,8,
+#          0,0,4,0,9,0,2,0,0,
+#          0,0,8,7,3,4,0,9,0,
+#          0,0,7,2,0,8,1,0,3]
 
 #   #DISPLAYIN SOLUTION IMAGE+SAVING IMAGE
 #   #BONUS(WOC specific)
