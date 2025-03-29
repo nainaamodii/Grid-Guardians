@@ -1,140 +1,126 @@
-import numpy as np
+# MAIN WORKLFLOW
 import cv2
-from sudokualgo import *
-
-from utility import *
-pathImage=r"resources\sudoku_2.png"
+import numpy as np
+import operator
 from tensorflow.keras.models import load_model
+import sudoku_solver as sol  # Assuming you have a Sudoku solver function
+from utility import *
 
-# loading model
-model=initializePredictionModel()
+# Load the trained digit classifier model
+classifier = load_model("./digit_model.h5")
 
+# Define grid parameters
+marge = 4
+case = 28 + 2 * marge
+taille_grille = 9 * case
 
-# PREPARING THE IMAGE
-widthImg=450
-heightImg=450
-img=cv2.imread(pathImage)
-img=cv2.resize(img, (widthImg,heightImg))
-imgBlank= np.zeros((heightImg,widthImg,3), np.uint8) # creating blank image for debugging
+# change the path image for any other sudoku image ques
+image_path = r"resources\sudoku_2.png"
+frame = cv2.imread(image_path)
 
-imgThreshold=preProcess(img)
+if frame is None:
+    print("Error: Unable to load image!")
+    exit()
 
-# FINDING CONTOURS
-contours, hierarchy=cv2.findContours(imgThreshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+# Convert image to grayscale
+gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+gray = cv2.GaussianBlur(gray, (7, 7), 0)
+thresh = cv2.adaptiveThreshold(
+    gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 9, 2)
 
-# FINDING BIGGEST CONTOUR (SODUKU)
-biggest, maxArea= biggestContour(contours)
-if biggest.size != 0:
-    biggest=reorder(biggest)
+# Find contours to detect the largest rectangular grid
+contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+contour_grille = None
+maxArea = 0
 
-    # preparing points for wrap
-    pts1= np.float32(biggest)
-    pts2= np.float32([[0,0], [widthImg,0],[0,heightImg],[widthImg, heightImg]])
+for c in contours:
+    area = cv2.contourArea(c)
+    if area > 25000:
+        peri = cv2.arcLength(c, True)
+        polygone = cv2.approxPolyDP(c, 0.01 * peri, True)
+        if area > maxArea and len(polygone) == 4:
+            contour_grille = polygone
+            maxArea = area
 
-    matrix= cv2.getPerspectiveTransform(pts1, pts2)
-    imgWrapColoured= cv2.warpPerspective(img, matrix, (widthImg, heightImg))
-    imgDetectedDigits=imgBlank.copy()
-    imgWrapColoured=cv2.cvtColor(imgWrapColoured, cv2.COLOR_BGR2GRAY)
+# If a Sudoku grid is found
+if contour_grille is not None:
+    cv2.drawContours(frame, [contour_grille], 0, (0, 255, 0), 2)
 
-   
+    # Get perspective transform
+    points = np.vstack(contour_grille).squeeze()
+    points = sorted(points, key=operator.itemgetter(1))  # Sort by y-coordinates
 
-    # SPLIT THE IMAGE AND FIND EACH DIGIT AVAILABLE
-    imgSolvedDigits= imgBlank.copy()
-    boxes= splitBoxes(imgWrapColoured)
-    
-    numbers=getPrediction(boxes,model)
-    # numbers=[3,0,1,0,8,6,5,0,4,
-    #      0,4,6,5,2,1,0,7,0,
-    #      5,0,0,0,0,0,0,0,1,
-    #      4,0,0,8,0,0,0,0,2,
-    #      0,8,0,3,4,7,9,0,0,
-    #      0,0,9,0,5,0,0,3,8,
-    #      0,0,4,0,9,0,2,0,0,
-    #      0,0,8,7,3,4,0,9,0,
-    #      0,0,7,2,0,8,1,0,3]
-    # numbers= [7,8,0,4,0,0,1,2,0,6,0,0,0,7,5,0,0,9,0,0,0,6,0,1,0,7,8,0,0,7,0,4,0,2,6,0,0,0,1,0,5,0,9,3,0,9,0,4,0,6,0,0,0,5,0,7,0,3,0,0,0,1,2,1,2,0,0,0,7,4,0,0,0,4,9,2,0,6,0,0,7]
-    
-    imgDetectedDigits=displayNumbers(imgDetectedDigits, numbers, color=(52,132,197))
-   
-   
+    if points[0][0] < points[1][0]:
+        if points[3][0] < points[2][0]:
+            pts1 = np.float32([points[0], points[1], points[3], points[2]])
+        else:
+            pts1 = np.float32([points[0], points[1], points[2], points[3]])
+    else:
+        if points[3][0] < points[2][0]:
+            pts1 = np.float32([points[1], points[0], points[3], points[2]])
+        else:
+            pts1 = np.float32([points[1], points[0], points[2], points[3]])
 
-    numbers=np.asarray(numbers)
-    posArray= np.where(numbers>0, 0,1)
+    pts2 = np.float32([[0, 0], [taille_grille, 0], [0, taille_grille], [taille_grille, taille_grille]])
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+    grille = cv2.warpPerspective(frame, M, (taille_grille, taille_grille))
 
-    # print(posArray)   #TESTING
+    # Convert the extracted grid to grayscale and apply thresholding
+    grille = cv2.cvtColor(grille, cv2.COLOR_BGR2GRAY)
+    grille = cv2.adaptiveThreshold(grille, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 7, 3)
 
-## FINDING SOLUTION ON BOARD
+    cv2.imshow("Extracted Sudoku Grid", grille)
 
-    board = np.array(numbers).reshape(9, 9)
+    # Recognize digits using the trained model
+    grille_txt = []
+    for y in range(9):
+        ligne = ""
+        for x in range(9):
+            y2min = y * case + marge
+            y2max = (y + 1) * case - marge
+            x2min = x * case + marge
+            x2max = (x + 1) * case - marge
+            img = grille[y2min:y2max, x2min:x2max]
+            x_img = img.reshape(1, 28, 28, 1)
 
-    # print_sudoku(board)
-    # print("----------------------")
-    try:
-        solve_sudoku(board)
-    except:
-        pass
-    print_sudoku(board)  
-    flatlist=[]
-    for sublist in board:
-        for item in sublist:
-            flatlist.append(item)
-    solvedNumbers=flatlist*posArray
-    imgSolvedNumbers=displayNumbers(imgSolvedDigits,solvedNumbers)
+            if x_img.sum() > 10000:  # If there is a digit present
+                # prediction = classifier.predict_classes(x_img)
+                prediction = np.argmax(classifier.predict(x_img), axis=-1)
 
-   
+                ligne += "{:d}".format(prediction[0])
+            else:
+                ligne += "0"
 
-##overlay Solution(TO OVERLAY THE SOLUTION ON SAME IMAGE)
+        grille_txt.append(ligne)
 
-#     #preparing points for wrap
-    # pts2=np.float32(biggest)
-    # pts1 = np.float32([[0,0], [widthImg,0], [0,heightImg], [widthImg,heightImg]])
+    print("Recognized Grid:")
+    for row in grille_txt:
+        print(row)
 
-#     # GER
-    # matrix=cv2.getPerspectiveTransform(pts1,pts2)
-    # imgInvWrapColoured=img.copy()
-    # imgInvWrapColoured = cv2.warpPerspective(imgSolvedDigits, matrix, (widthImg, heightImg))
+    # Solve the Sudoku puzzle
+    result = sol.sudoku(grille_txt)
+    print("Solved Sudoku:", result)
 
-    
+    if result is not None:
+        # displaying and saving result
+        flatlist=[]
+        for sublist in result:
+            for item in sublist:
+                flatlist.append(item)
+        
+        sand_color = ( 128, 178, 194)
+        puzzleSol=np.full((450, 450, 3), sand_color, dtype=np.uint8)
+        puzzleSol=displayNumbers(puzzleSol, flatlist, color=(52,132,197))
+        puzzleSol=drawGrid(puzzleSol)
+        cv2.imwrite("PuzzleSoln.png", puzzleSol)
 
-#     # overwritting on ques image
-    # inv_perspective = cv2.addWeighted(imgInvWrapColoured, 1, img, 0.5, 1)
+        cv2.imshow("Solved Sudoku", puzzleSol)
 
-   
-#     # Display the result
-    # cv2.imshow("Solved Sudoku", inv_perspective)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    else:
+        print("No solution found.")
 
+else:
+    print("No Sudoku grid detected.")
 
-# # NUMBER DATA FOR TESTING
-# numbers=[0,7,0,0,0,0,0,4,3,0,4,0,0,0,9,6,1,0,8,0,0,6,3,4,9,0,0,0,9,4,0,5,2,0,0,0,3,5,8,4,6,0,0,2,0,0,0,0,8,0,0,5,3,0,0,8,0,0,7,0,9,1,9,0,2,1,0,0,0,0,5,0,0,7,0,4,0,8,0,2]
-
-# numbers= [7,8,0,4,0,0,1,2,0,6,0,0,0,7,5,0,0,9,0,0,0,6,0,1,0,7,8,0,0,7,0,4,0,2,6,0,0,0,1,0,5,0,9,3,0,9,0,4,0,6,0,0,0,5,0,7,0,3,0,0,0,1,2,1,2,0,0,0,7,4,0,0,0,4,9,2,0,6,0,0,7]
-
-# numbers=[3,0,1,0,8,6,5,0,4,
-#          0,4,6,5,2,1,0,7,0,
-#          5,0,0,0,0,0,0,0,1,
-#          4,0,0,8,0,0,0,0,2,
-#          0,8,0,3,4,7,9,0,0,
-#          0,0,9,0,5,0,0,3,8,
-#          0,0,4,0,9,0,2,0,0,
-#          0,0,8,7,3,4,0,9,0,
-#          0,0,7,2,0,8,1,0,3]
-
-#   #DISPLAYIN SOLUTION IMAGE+SAVING IMAGE
-#   #BONUS(WOC specific)
-    sand_color = ( 128, 178, 194)
-    puzzleSol=np.full((450, 450, 3), sand_color, dtype=np.uint8)
-    puzzleSol=displayNumbers(puzzleSol, flatlist, color=(52,132,197))
-    puzzleSol=drawGrid(puzzleSol)
-    cv2.imwrite("PuzzleSoln.png", puzzleSol)
-
-    cv2.imshow("Solved Sudoku", puzzleSol)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-
-
-
-
+cv2.waitKey(0)
+cv2.destroyAllWindows()
